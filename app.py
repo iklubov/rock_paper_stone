@@ -31,7 +31,7 @@ async def battles_create(websocket, message):
     return offerjson
 
 @pathhandler('/battles_list')
-async def battles_create(websocket, message):
+async def battles_list(websocket, message):
     battles_list = get_offers()
     return battles_list
 

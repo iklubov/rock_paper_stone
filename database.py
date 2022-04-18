@@ -19,7 +19,6 @@ def get_db():
     redis = Redis(
         host=hostName,
         port= '6379', password=password)
-
     return redis
 
 def clear_db():
@@ -29,24 +28,29 @@ def clear_db():
 
 def write_offer(player_id, ntf_id):
     db = get_db()
-    if not db.get(f'players:{player_id}_{ntf_id}'):
-        db.set(f'players:{player_id}_{ntf_id}', True)
+    key = f'players:{player_id}_{ntf_id}'
+    if not db.get(key):
+        db.set(key, 1)
         offer_id = next(offerIdGen)
-        db.hset('offers', offer_id, json.dumps([{'player_id':player_id, 'ntf_id':ntf_id}]))
-        jsonobj = json.dumps({'player_id':player_id, 'ntf_id':ntf_id, 'offer_id':offer_id})
+        db.hset('offers', offer_id, json.dumps({'player_id':player_id, 'ntf_id':ntf_id}))
+        result = json.dumps({'player_id':player_id, 'ntf_id':ntf_id, 'offer_id':offer_id})
     else:
         errorstr = f' offer with player_id {player_id} and nft_id {ntf_id} already exists'
         logging.log(logging.ERROR, errorstr)
-        jsonobj = json.dumps({'error':errorstr})
+        result = json.dumps({'error':errorstr})
     db.close()
-    return jsonobj
+    return result
 
 
 def get_offers():
     db = get_db()
     offers = db.hgetall('offers')
-    print(offers)
-    result = json.dumps([json.loads(offer) for offer in offers.values()])
+    offer_dicts = []
+    for offer_id, offer_b in offers.items():
+        offer_loaded = json.loads(offer_b)
+        offer_loaded['offer_id'] = int(offer_id)
+        offer_dicts.append(offer_loaded)
+    result = json.dumps(offer_dicts)
     db.close()
     return result
 
