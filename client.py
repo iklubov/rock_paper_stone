@@ -62,8 +62,12 @@ async def test_case():
     print(battles_list1)
     print(battles_list2)
 
-    accept_battle_result = await accept_battle(0, 1, 1)
-    print(accept_battle_result)
+    accept_battle_result1 = await accept_battle(0, 1, 1)
+    accept_battle_result2 = await accept_battle(0, 1, 1)
+    battles_list3 = await get_battle_list()
+    print(accept_battle_result1)
+    print(accept_battle_result2)
+    print(battles_list3)
 
-#asyncio.run(test_case())
-asyncio.run(test_double_create())
+asyncio.run(test_case())
+#asyncio.run(test_double_create())

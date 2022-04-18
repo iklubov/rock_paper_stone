@@ -24,8 +24,12 @@ def get_db():
     return redis
 
 def clear_db():
+    global offerIdGen, acceptIdGen, battleIdGen
     db = get_db()
     db.flushall()
+    offerIdGen = iter(range(sys.maxsize))
+    acceptIdGen = iter(range(sys.maxsize))
+    battleIdGen = iter(range(sys.maxsize))
     db.close()
 
 def write_offer(player_id, ntf_id):
@@ -51,16 +55,14 @@ def get_offers():
         offer_loaded_list = json.loads(offer_b)
         for offer_loaded in offer_loaded_list:
             offer_loaded['offer_id'] = int(offer_id)
-        offer_dicts.append(offer_loaded)
+        offer_dicts.append(offer_loaded_list)
     result = json.dumps(offer_dicts)
     db.close()
     return result
 
-#todo
 def accept_offer(offer_id, player_id, ntf_id):
     db = get_db()
     offer = db.hget('offers', offer_id)
-    print(offer, offer_id)
     if offer is None:
         db.close()
         raise KNBError(f' offer with offer_id {offer_id} doesnt exist')
@@ -72,7 +74,6 @@ def accept_offer(offer_id, player_id, ntf_id):
         db.close()
         raise KNBError(f' offer with offer_id {offer_id} and player_id {player_id} has sent than 1 times')
 
-    print(offer_list)
     accept_id = next(acceptIdGen)
     offer_list.append({'player_id':player_id, 'ntf_id':ntf_id})
     db.hset('offers', offer_id, json.dumps(offer_list))

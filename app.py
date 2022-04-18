@@ -8,7 +8,6 @@ import schemas
 from database import write_offer, get_offers, clear_db, accept_offer, start_battle
 from utils import pathhandler, get_path, KNBError
 
-
 async def handler(websocket, path):
     async for message in websocket:
         path_handler = get_path(path)
