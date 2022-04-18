@@ -5,7 +5,7 @@ import logging
 import websockets
 
 import schemas
-from connect import write_offer, get_offers, clear_db, accept_offer, start_battle
+from database import write_offer, get_offers, clear_db, accept_offer, start_battle
 from utils import pathhandler, get_path
 
 
