@@ -83,13 +83,14 @@ def accept_offer(offer_id, player_id, ntf_id):
     db.close()
     return result
 
-#todo
 def start_battle(offer_id, accept_id):
     db = get_db()
-    # what for
-    offer_id = db.get('accepts', accept_id)
+    offer_id_b = db.hget('accepts', accept_id)
+    if offer_id_b is None or int(offer_id_b) != offer_id:
+        db.close()
+        raise KNBError(f'Offer_id {offer_id} whith accept_id {accept_id} does not exist')
     battle_id = next(battleIdGen)
-    db.hset('battles', battle_id, json.dumps([]))
+    db.hset('battles', battle_id, json.dumps({'moves':[]}))
     result = json.dumps({'battle_id': battle_id})
     db.close()
     return result

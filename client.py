@@ -36,6 +36,16 @@ async def accept_battle(offer_id, ntf_id, player_id):
         result = await websocket.recv()
         return result
 
+async def start_battle(accept_id, offer_id):
+    async with websockets.connect("ws://localhost:8001/battles_start") as websocket:
+        data = {
+            "offer_id": offer_id,
+            "accept_id": accept_id
+        }
+        await websocket.send(json.dumps(data))
+        result = await websocket.recv()
+        return result
+
 async def test_double_create():
     clear_result = await clear()
     create_battle_result1 = await create_battle(0,0)
@@ -68,6 +78,9 @@ async def test_case():
     print(accept_battle_result1)
     print(accept_battle_result2)
     print(battles_list3)
+
+    start_battle_result = await start_battle(0, 0)
+    print(start_battle_result)
 
 asyncio.run(test_case())
 #asyncio.run(test_double_create())

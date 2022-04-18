@@ -16,8 +16,6 @@ async def handler(websocket, path):
             result = await path_handler(websocket, message)
         except KNBError as error:
             result = str(error)
-        except BaseException as error:
-            result = f'BaseException {str(error)}'
         print(f'result{result}')
         logging.log(logging.INFO, f'path {path} message {message} result {result}')
         await websocket.send(result)
@@ -39,14 +37,12 @@ async def battles_list(websocket, message):
     battles_list = get_offers()
     return battles_list
 
-#todo
 @pathhandler('/battles_accept', schemas.accept_battle)
 async def battle_accept(websocket, message):
     messageobj = json.loads(message)
     result = accept_offer(**messageobj)
     return result
 
-#todo
 @pathhandler('/battles_start', schemas.start_battle)
 async def battle_start(websocket, message):
     messageobj = json.loads(message)
