@@ -1,14 +1,11 @@
-import asyncio
 import json
-import logging
 import sys
-from collections import defaultdict
 from os import getenv
+from random import randint
 
-import itertools
 from redis.client import Redis
 
-from utils import KNBError
+from utils import KNBError, Choices
 
 offerIdGen = iter(range(sys.maxsize))
 acceptIdGen = iter(range(sys.maxsize))
@@ -45,7 +42,6 @@ def write_offer(player_id, ntf_id):
     result = json.dumps({'player_id':player_id, 'ntf_id':ntf_id, 'offer_id':offer_id})
     db.close()
     return result
-
 
 def get_offers():
     db = get_db()
@@ -89,26 +85,83 @@ def start_battle(offer_id, accept_id):
     if offer_id_b is None or int(offer_id_b) != offer_id:
         db.close()
         raise KNBError(f'Offer_id {offer_id} whith accept_id {accept_id} does not exist')
+    offer_b = db.hget('offers', offer_id)
+    if offer_b is None:
+        db.close()
+        raise KNBError(f'Offer_id {offer_id} does not exist')
+
+    offer_list = json.loads(offer_b)
+    players_ids = (offer['player_id'] for offer in offer_list)
+
     battle_id = next(battleIdGen)
-    db.hset('battles', battle_id, json.dumps({'moves':[]}))
+    db.hset('battles', battle_id, json.dumps({'moves':[], 'rounds':[], 'players': {pid:100 for pid in players_ids}}))
     result = json.dumps({'battle_id': battle_id})
     db.close()
     return result
 
-# todo
 def move_battle(battle_id, player_id, choice_id, round_id):
+    move_obj = {
+        'battle_id': battle_id,
+        'player_id': player_id,
+        'choice_id': choice_id,
+        'round_id' : round_id
+    }
     db = get_db()
-    # what for
-    #offer_id = db.get('accepts', accept_id)
-    battle_id = next(battleIdGen)
-    db.hset('battles', offer_id, battle_id)
-    result = json.dumps({'battle_id': battle_id})
+    battle_obj_b = db.hget('battles', battle_id)
+    if battle_obj_b is None:
+        db.close()
+        raise KNBError(f'battle with battle_id {battle_id} does not exist')
+    if choice_id not in Choices.ALL:
+        db.close()
+        raise KNBError(f'choice with {choice_id} does not exist')
+    battle_obj = json.loads(battle_obj_b)
+    current_moves = battle_obj['moves']
+    players_ids = (int(pid) for pid in battle_obj['players'].keys())
+    if player_id not in players_ids:
+        db.close()
+        raise KNBError(f'player with {player_id} does not exist in battle {battle_id}')
+
+    result = {}
+
+    if len(current_moves) != 0:
+        last_move = current_moves[-1]
+        # start new round - do nothing
+        if len(current_moves) % 2 == 1:
+            if last_move['round_id'] != round_id:
+                db.close()
+                raise KNBError(f'Another round {round_id} after not finished round{last_move["round_id"]}')
+            if last_move['player_id'] == player_id:
+                db.close()
+                raise KNBError(f'Second move with the same player_id {player_id}')
+        # second player answered - process round results
+        else:
+            if last_move['round_id'] == round_id:
+                db.close()
+                raise KNBError(f'The same round {round_id} after finished round{last_move["round_id"]}')
+
+            win_index = Choices.who_wins(last_move['choice_id'], choice_id)
+            winner_id, looser_id = -1, -1
+            if win_index != 0:
+                points_to_delete = randint(10, 20)
+                looser_id = player_id if win_index == 2 else last_move['player_id']
+                winner_id = player_id if win_index == 1 else last_move['player_id']
+                current_player_points = battle_obj['players'][str(looser_id)]
+                new_player_points = current_player_points - points_to_delete
+                battle_obj['players'][str(looser_id)] = new_player_points
+            # round finished
+            battle_obj['rounds'].append({'round_id':round_id, 'winner_id':winner_id})
+            result = {
+                'round': {'round_id':round_id, 'winner_id':winner_id, 'current_points': battle_obj['players']},
+            }
+
+    current_moves.append(move_obj)
+    battle_finished = any(pp <= 0 for pp in battle_obj['players'].values())
+    if battle_finished:
+        result['battle_result'] = {'battle_id':battle_id, 'result': battle_obj['players']}
+
+    db.hset('battles', battle_id, json.dumps(battle_obj))
     db.close()
-    return result
+    return json.dumps(result)
 
 
-# clear_db()
-# for arena_id in range(10):
-#     print(write_offer(0, arena_id))
-# print(get_offers())
 

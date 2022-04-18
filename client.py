@@ -1,5 +1,6 @@
 import asyncio
 import json
+from random import randint
 
 import websockets
 
@@ -46,6 +47,18 @@ async def start_battle(accept_id, offer_id):
         result = await websocket.recv()
         return result
 
+async def move_battle(battle_id, player_id, choice_id, round_id):
+    async with websockets.connect("ws://localhost:8001/battles_move") as websocket:
+        data = {
+            "battle_id": battle_id,
+            "player_id": player_id,
+            "choice_id": choice_id,
+            "round_id": round_id,
+        }
+        await websocket.send(json.dumps(data))
+        result = await websocket.recv()
+        return result
+
 async def test_double_create():
     clear_result = await clear()
     create_battle_result1 = await create_battle(0,0)
@@ -81,6 +94,18 @@ async def test_case():
 
     start_battle_result = await start_battle(0, 0)
     print(start_battle_result)
+    battle_finished = False
+    round_number = 0
+    while not battle_finished:
+        move_result_1 = await move_battle(0, 0, randint(0,2), round_number)
+        move_result_2 = await move_battle(0, 1, randint(0,2), round_number)
+        print(move_result_1)
+        print(move_result_2)
+        battle_finished = 'battle_result' in move_result_2 or 'error' in move_result_1 or 'error' in move_result_2
+        round_number += 1
+
 
 asyncio.run(test_case())
 #asyncio.run(test_double_create())
+
+

@@ -29,3 +29,19 @@ def pathhandler(path, schema=None):
 
 class KNBError(Exception):
     pass
+
+class Choices:
+    STONE = 0
+    PAPER = 1
+    SCISSORS = 2
+    ALL = STONE, PAPER, SCISSORS
+
+    @staticmethod
+    def who_wins(choice1, choice2):
+        if choice1 == choice2:
+            return 0
+        if choice1 == Choices.STONE and choice2 == Choices.SCISSORS:
+            return 1
+        if choice2 == Choices.STONE and choice1 == Choices.SCISSORS:
+            return 2
+        return 1 if choice1 > choice2 else 2
