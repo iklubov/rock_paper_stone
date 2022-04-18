@@ -6,14 +6,19 @@ import websockets
 
 import schemas
 from database import write_offer, get_offers, clear_db, accept_offer, start_battle
-from utils import pathhandler, get_path
+from utils import pathhandler, get_path, KNBError
 
 
 async def handler(websocket, path):
     async for message in websocket:
         path_handler = get_path(path)
         print('message', path, path_handler, message)
-        result = await path_handler(websocket, message)
+        try:
+            result = await path_handler(websocket, message)
+        except KNBError as error:
+            result = str(error)
+        except BaseException as error:
+            result = f'BaseException {str(error)}'
         print(f'result{result}')
         logging.log(logging.INFO, f'path {path} message {message} result {result}')
         await websocket.send(result)

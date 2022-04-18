@@ -27,3 +27,5 @@ def pathhandler(path, schema=None):
         return innerWrapper
     return outerWrapper
 
+class KNBError(Exception):
+    pass
