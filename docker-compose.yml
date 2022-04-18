@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  db:
+    image: redis
+    environment:
+      REDIS_PASSWORD: redispwd
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --requirepass redispwd --loglevel warning
+
+#  db:
+#    image: postgres
+##    volumes:
+##      - ./data/db:/var/lib/postgresql/data
+#    environment:
+#      - POSTGRES_DB=postgres
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_PASSWORD=postgres
+#    ports:
+#      - "5432:5432"
+  application:
+    build: .
+    command: python app.py
+    volumes:
+      - .:/code
+    ports:
+      - "8001:8001"
+    environment:
+      REDIS_PASSWORD: redispwd
+      IS_LOCAL: "false"
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      - db
